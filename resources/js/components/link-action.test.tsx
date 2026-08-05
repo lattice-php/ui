@@ -1,0 +1,102 @@
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ActionInteractionProvider } from "@lattice-php/lattice/action";
+import { fakeNode } from "@lattice-php/lattice/test-support";
+import type { Node, ComponentPropsOf } from "@lattice-php/core/types";
+import LinkComponent from "./link";
+
+const apiFetch = vi.hoisted(() => vi.fn<() => Promise<Response>>());
+
+vi.mock("@lattice-php/core/api", () => ({ apiFetch }));
+
+vi.mock("@inertiajs/react", async () =>
+  (await import("@lattice-php/lattice/test/inertia-mock")).inertiaMock(),
+);
+
+function actionLink(props: Partial<ComponentPropsOf<"action">> = {}): Node<"link"> {
+  return fakeNode({
+    id: "log-out",
+    type: "link",
+    props: {
+      label: "Log out",
+      action: fakeNode({
+        id: "workbench.logout",
+        type: "action",
+        props: {
+          endpoint: "/lattice/actions/workbench.logout",
+          label: "Log out",
+          method: "post",
+          ref: "sealed-reference",
+          ...props,
+        },
+      }),
+    },
+  });
+}
+
+function renderActionLink(node: Node<"link">) {
+  return render(
+    <ActionInteractionProvider>
+      <LinkComponent node={node}>{null}</LinkComponent>
+    </ActionInteractionProvider>,
+  );
+}
+
+describe("link action trigger", () => {
+  beforeEach(() => {
+    apiFetch.mockReset();
+    apiFetch.mockResolvedValue(new Response(JSON.stringify({ effects: [] }), { status: 200 }));
+  });
+
+  it("dispatches the nested action with the ref header", async () => {
+    renderActionLink(actionLink());
+
+    fireEvent.click(screen.getByRole("button", { name: "Log out" }));
+
+    await waitFor(() => {
+      expect(apiFetch).toHaveBeenCalledWith("/lattice/actions/workbench.logout", {
+        method: "post",
+        ref: "sealed-reference",
+        throwOnError: false,
+      });
+    });
+  });
+
+  it("confirms before dispatching when the action requires confirmation", async () => {
+    const node = actionLink({
+      confirmation: {
+        cancelLabel: "Stay",
+        confirmLabel: "Log out",
+        description: "End your session?",
+        title: "Log out?",
+      },
+    });
+
+    renderActionLink(node);
+
+    fireEvent.click(screen.getByRole("button", { name: "Log out" }));
+
+    expect(apiFetch).not.toHaveBeenCalled();
+    const dialog = screen.getByRole("dialog", { name: "Log out?" });
+    expect(dialog).toBeVisible();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Log out" }));
+
+    await waitFor(() => {
+      expect(apiFetch).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("opens the modal form when the action carries one", () => {
+    const node = actionLink({
+      form: fakeNode({ id: "reason-form", type: "form", props: {}, schema: [] }),
+    });
+
+    renderActionLink(node);
+
+    fireEvent.click(screen.getByRole("button", { name: "Log out" }));
+
+    expect(apiFetch).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toBeVisible();
+  });
+});
