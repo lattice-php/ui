@@ -7,7 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@lattice-php/core": path.resolve(import.meta.dirname, "../core/resources/js"),
-      "@lattice-php/lattice": path.resolve(import.meta.dirname, "../../resources/js"),
+      "@lattice-php/lattice": path.resolve(import.meta.dirname, "../framework/resources/js"),
       "@lattice-php/ui": path.resolve(import.meta.dirname, "resources/js"),
     },
   },
