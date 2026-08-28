@@ -215,7 +215,6 @@ export type Heading = {
 export type Height = "full" | "screen";
 export type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 export type Icon = {
-  class: string | null;
   color: Color | null;
   name: string;
   size: Size;
@@ -239,6 +238,7 @@ export type Link = {
   prefix: Affix | null;
   suffix: Affix | null;
   tabIndex: number | null;
+  unstyled: boolean;
 };
 export type LocaleChange = {
   readonly locale: string;

@@ -1,6 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { Icon } from "../../icons";
 import { UI_NAMESPACE, useT } from "../../i18n";
+import { cn } from "../../lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "../popover/popover";
 
 export type TooltipTriggerProps = Omit<
@@ -12,12 +13,25 @@ export type TooltipTriggerProps = Omit<
 
 export type TooltipProps = {
   "aria-label"?: string;
+  className?: string;
   content?: ReactNode;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  open?: boolean;
   trigger?: ReactNode;
   triggerProps?: TooltipTriggerProps;
 };
 
-export function Tooltip({ "aria-label": ariaLabel, content, trigger, triggerProps }: TooltipProps) {
+export function Tooltip({
+  "aria-label": ariaLabel,
+  className,
+  content,
+  defaultOpen,
+  onOpenChange,
+  open,
+  trigger,
+  triggerProps,
+}: TooltipProps) {
   const { t } = useT(UI_NAMESPACE);
 
   if (!hasContent(content)) {
@@ -27,7 +41,7 @@ export function Tooltip({ "aria-label": ariaLabel, content, trigger, triggerProp
   const hasTrigger = hasContent(trigger);
 
   return (
-    <Popover>
+    <Popover defaultOpen={defaultOpen} onOpenChange={onOpenChange} open={open}>
       <PopoverTrigger
         {...triggerProps}
         type="button"
@@ -42,7 +56,10 @@ export function Tooltip({ "aria-label": ariaLabel, content, trigger, triggerProp
       >
         {hasTrigger ? trigger : <Icon name="info" className="size-lt-icon-sm" />}
       </PopoverTrigger>
-      <PopoverContent align="start" className="max-w-xs p-3 text-sm [&_a]:underline">
+      <PopoverContent
+        align="start"
+        className={cn("max-w-xs p-3 text-sm [&_a]:underline", className)}
+      >
         {content}
       </PopoverContent>
     </Popover>
